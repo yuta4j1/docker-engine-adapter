@@ -1,8 +1,26 @@
 use std::error::Error;
 use std::path::Path;
+
 use futures_util::stream::TryStreamExt;
-use hyper::{Body, Client};
-use hyperlocal::{UnixClientExt, Uri};
+use hyper::{Client};
+use hyperlocal::{Uri, UnixClientExt};
+use serde::{Deserialize};
+
+#[derive(Deserialize, Debug)]
+struct Container {
+    #[serde(rename(deserialize = "Id"))]
+    id: String,
+    #[serde(rename(deserialize = "Names"))]
+    names: Vec<String>,
+    #[serde(rename(deserialize = "ImageID"))]
+    image_id: String,
+    #[serde(rename(deserialize = "Command"))]
+    command: String,
+    #[serde(rename(deserialize = "State"))]
+    state: String,
+    #[serde(rename(deserialize = "Status"))]
+    status: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -16,8 +34,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             Ok(buf)
         })
         .await?;
-
-    println!("{}", String::from_utf8(bytes)?);
+    
+    let json_str = String::from_utf8(bytes)?;
+    let deserialized: Vec<Container> = serde_json::from_str(&json_str).unwrap();
+    println!("{:?}", deserialized);
 
     Ok(())
 }
